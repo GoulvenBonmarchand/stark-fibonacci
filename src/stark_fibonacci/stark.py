@@ -175,9 +175,6 @@ def verify_fibonacci(proof: StarkProof) -> bool:
 
     pi = proof.public_inputs
     n = pi.n
-    c0 = pi.c0
-    c1 = pi.c1
-    c = pi.claimed_output
 
     if n < 2:
         return False
