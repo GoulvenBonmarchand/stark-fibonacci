@@ -190,6 +190,29 @@ class Polynomial:
         return Polynomial(result)
 
     @staticmethod
+    def interpolate_trace(
+        trace: Sequence[FieldElement],
+        domain: Sequence[FieldElement],
+    ) -> "Polynomial":
+        """Interpolate the trace on the first `len(trace)` points of the domain.
+
+        Returns the unique polynomial of degree < len(trace) matching
+        trace[i] at x = domain[i] for i in [0, len(trace)).
+        """
+        if len(domain) < len(trace):
+            raise ValueError("domain must have at least len(trace) points")
+        points = [(domain[i], trace[i]) for i in range(len(trace))]
+        return Polynomial.lagrange_interpolate(points)
+
+    @staticmethod
+    def low_degree_extend(
+        poly: "Polynomial",
+        extended_domain: Sequence[FieldElement],
+    ) -> list[FieldElement]:
+        """Evaluate `poly` at each point of `extended_domain`."""
+        return [poly.evaluate(x) for x in extended_domain]  # type: ignore[misc]  # x is FieldElement
+
+    @staticmethod
     def _multiply_by_linear(
         poly: list[FieldElement], root: FieldElement
     ) -> list[FieldElement]:

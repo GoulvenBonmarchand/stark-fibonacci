@@ -5,8 +5,10 @@ from __future__ import annotations
 import pytest
 from hypothesis import assume, given, settings, strategies as st
 
+from stark_fibonacci.domain import blowup_domain, multiplicative_subgroup
 from stark_fibonacci.field import FIELD_PRIME, FieldElement
 from stark_fibonacci.polynomial import Polynomial
+from stark_fibonacci.trace import fibonacci_trace
 
 
 def test_zero_and_one() -> None:
@@ -228,3 +230,58 @@ def test_lagrange_passes_through_distinct_points(points) -> None:
     p = Polynomial.lagrange_interpolate(points)
     for x, y in points:
         assert p.evaluate(x) == y
+
+
+def test_interpolate_trace_recovers_values_on_initial_domain() -> None:
+    n = 8
+    trace = fibonacci_trace(1, 1, n)
+    domain_size = 16
+    domain = multiplicative_subgroup(domain_size)
+    T = Polynomial.interpolate_trace(trace, domain)
+    assert T.degree() < len(trace)
+    for i in range(len(trace)):
+        assert T.evaluate(domain[i]) == trace[i]
+
+
+def test_interpolate_trace_truncates_at_len_trace() -> None:
+    n = 5
+    trace = fibonacci_trace(1, 1, n)
+    domain = multiplicative_subgroup(8)
+    T = Polynomial.interpolate_trace(trace, domain)
+    for i in range(len(trace)):
+        assert T.evaluate(domain[i]) == trace[i]
+
+
+def test_interpolate_trace_rejects_short_domain() -> None:
+    trace = fibonacci_trace(1, 1, 4)
+    domain = multiplicative_subgroup(4)
+    with pytest.raises(ValueError):
+        Polynomial.interpolate_trace(trace, domain)
+
+
+def test_low_degree_extend_size() -> None:
+    p = Polynomial([1, 2, 3])
+    domain = [FieldElement(i + 1) for i in range(8)]
+    lde = Polynomial.low_degree_extend(p, domain)
+    assert len(lde) == 8
+
+
+def test_low_degree_extend_matches_polynomial() -> None:
+    p = Polynomial([1, 2, 3])
+    domain = [FieldElement(i) for i in range(16)]
+    lde = Polynomial.low_degree_extend(p, domain)
+    for i, x in enumerate(domain):
+        assert lde[i] == p.evaluate(x)
+
+
+def test_low_degree_extend_to_blowup() -> None:
+    n = 7
+    trace = fibonacci_trace(1, 1, n)
+    domain_size = 8
+    base = multiplicative_subgroup(domain_size)
+    extended = blowup_domain(domain_size, 4)
+    T = Polynomial.interpolate_trace(trace, base)
+    lde = Polynomial.low_degree_extend(T, extended)
+    assert len(lde) == domain_size * 4
+    for i, x in enumerate(extended):
+        assert lde[i] == T.evaluate(x)
