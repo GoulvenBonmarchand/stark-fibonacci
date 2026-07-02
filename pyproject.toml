@@ -2,6 +2,7 @@
 name = "stark-fibonacci"
 version = "0.1.0"
 description = "STARK prover and verifier for the Fibonacci recurrence"
+readme = "README.md"
 authors = [
     { name = "GoulvenBonmarchand", email = "goulven.bonmarchand@gmail.com" }
 ]
